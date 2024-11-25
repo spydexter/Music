@@ -1,0 +1,65 @@
+import tensorlow as tf
+from tensorlow.keras import layers, models
+from tensorlow.keras.applications import VGG16
+from tensorlow.keras.datasets import cifar10
+from tensorlow.keras.utils import to_categorical
+import matplotlib.pyplot as plt
+
+def train_cnn_from_scratch():
+    (train_images, train_labels), (test_images, test_labels) = cifar10.load_data()
+    train_images, test_images = train_images / 255.0, test_images / 255.0
+    train_labels, test_labels = to_categorical(train_labels), to_categorical(test_labels)
+    model = models.Sequential([
+        layers.Conv2D(32, (3, 3), activation='relu', input_shape=(32, 32, 3)),
+        layers.MaxPooling2D((2, 2)),
+        layers.Conv2D(64, (3, 3), activation='relu'),
+        layers.MaxPooling2D((2, 2)),
+        layers.Conv2D(64, (3, 3), activation='relu'),
+        layers.Flatten(),
+        layers.Dense(64, activation='relu'),
+        layers.Dense(10, activation='softmax')
+    ])
+    model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
+    history = model.fit(train_images, train_labels, epochs=5, validation_data=(test_images, test_labels), verbose=1)
+    test_loss, test_acc = model.evaluate(test_images, test_labels)
+    print(f"CNN from Scratch - Test Accuracy: {test_acc:.4f}")
+    plot_training_history(history, title="CNN from Scratch")
+
+def train_pretrained_vgg16():
+    (train_images, train_labels), (test_images, test_labels) = cifar10.load_data()
+    train_images, test_images = train_images / 255.0, test_images / 255.0
+    train_labels, test_labels = to_categorical(train_labels), to_categorical(test_labels)
+    vgg_base = VGG16(weights='imagenet', include_top=False, input_shape=(32, 32, 3))
+    vgg_base.trainable = False
+    model = models.Sequential([
+        vgg_base,
+        layers.Flatten(),
+        layers.Dense(128, activation='relu'),
+        layers.Dense(10, activation='softmax')
+    ])
+    model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
+    history = model.fit(train_images, train_labels, epochs=5, validation_data=(test_images, test_labels), verbose=1)
+    test_loss, test_acc = model.evaluate(test_images, test_labels)
+    print(f"Pretrained VGG16 - Test Accuracy: {test_acc:.4f}")
+    plot_training_history(history, title="Pretrained VGG16")
+
+def plot_training_history(history, title="Training History"):
+    plt.figure(figsize=(12, 5))
+    plt.subplot(1, 2, 1)
+    plt.plot(history.history['accuracy'], label='Train Accuracy')
+    plt.plot(history.history['val_accuracy'], label='Validation Accuracy')
+    plt.title(f"{title} - Accuracy")
+    plt.xlabel('Epochs')
+    plt.ylabel('Accuracy')
+    plt.legend()
+    plt.subplot(1, 2, 2)
+    plt.plot(history.history['loss'], label='Train Loss')
+    plt.plot(history.history['val_loss'], label='Validation Loss')
+    plt.title(f"{title} - Loss")
+    plt.xlabel('Epochs')
+    plt.ylabel('Loss')
+    plt.legend()
+    plt.show()
+
+train_cnn_from_scratch()
+train_pretrained_vgg16()
