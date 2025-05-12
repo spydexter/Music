@@ -1,0 +1,39 @@
+import numpy as np
+from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
+from gensim.models import Word2Vec
+
+text_data = [
+    "This is the first document.",
+    "This document is the second document.",
+    "And this is the third one.",
+    "Is this the first document?",
+]
+
+# i) One-Hot Encoding
+def one_hot_encoding(data):
+    words = list(set(" ".join(data).split()))
+    return np.array([[1 if word in text else 0 for word in words] for text in data])
+
+print("One-Hot Encoding:\n", one_hot_encoding(text_data))
+
+# ii) Bag of Words
+bow = CountVectorizer().fit_transform(text_data)
+print("\nBag of Words:\n", bow.toarray())
+
+# iii) n-grams (Unigrams + Bigrams)
+ngrams = CountVectorizer(ngram_range=(1, 2)).fit_transform(text_data)
+print("\nn-grams:\n", ngrams.toarray())
+
+# iv) Tf-Idf
+tfidf = TfidfVectorizer().fit_transform(text_data)
+print("\nTf-Idf:\n", tfidf.toarray())
+
+# v) Custom Feature: Document Length
+print("\nCustom Feature - Document Length:\n", np.array([[len(doc)] for doc in text_data]))
+
+# vi) Word2Vec Embeddings (Averaged per document)
+model = Word2Vec([doc.split() for doc in text_data], min_count=1)
+w2v_features = np.array([
+    np.mean([model.wv[word] for word in doc.split()], axis=0) for doc in text_data
+])
+print("\nWord2Vec Features:\n", w2v_features)
